@@ -1,0 +1,5 @@
+﻿  PathfindingTests.cpp
+C:\Users\G00425056@atu.ie\OneDrive - Atlantic TU\cpp-project\Pathfinding.h(43,38): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  (compiling source file '/PathfindingTests.cpp')
+  
+  cpp-project-tests.vcxproj -> C:\Users\G00425056@atu.ie\OneDrive - Atlantic TU\cpp-project\x64\Debug\cpp-project-tests.exe
