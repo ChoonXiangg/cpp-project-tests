@@ -1,8 +1,8 @@
 #include "pch.h"
 #include <gtest/gtest.h>
-#include "../cpp-project/Grid.h"
-#include "../cpp-project/Grid.cpp"
-#include "../cpp-project/GridNode.h"
+#include "../cpp-project/SquareGrid.h"
+#include "../cpp-project/SquareGrid.cpp"
+#include "../cpp-project/SquareNode.h"
 #include "../cpp-project/NodeBase.h"
 #include "../cpp-project/Pathfinding.h"
 
