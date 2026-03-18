@@ -361,8 +361,6 @@ TEST(HeuristicTest, BothHeuristicsFindPathOnOpenHexGrid) {
 }
 
 TEST(HeuristicTest, SquareOpenGridSameOptimalLength) {
-    // On an open grid with no walls, both heuristics must find the
-    // same optimal path length (Manhattan distance = 8 steps)
     SquareGrid manhattan(5, 5, Heuristic::Manhattan);
     auto mPath = Pathfinding::FindPath(manhattan.GetNode(0, 0), manhattan.GetNode(4, 4));
 
@@ -387,8 +385,6 @@ TEST(HeuristicTest, HexOpenGridSameOptimalLength) {
 }
 
 TEST(HeuristicTest, SquareWalledGridSameOptimalLength) {
-    // Even with walls, both heuristics must find the same optimal length
-    // since A* is optimal with any admissible heuristic
     SquareGrid manhattan(5, 5, Heuristic::Manhattan);
     manhattan.SetWall(2, 0);
     manhattan.SetWall(2, 1);
@@ -437,4 +433,99 @@ TEST(HeuristicTest, BothHeuristicsReturnEmptyWhenNoPath) {
 
     EXPECT_TRUE(mPath.empty());
     EXPECT_TRUE(ePath.empty());
+}
+
+// ========== Weighted Terrain Tests ==========
+
+TEST(WeightTest, DefaultWeightIsOne) {
+    SquareGrid grid(5, 5);
+    EXPECT_DOUBLE_EQ(grid.GetNode(0, 0)->GetWeight(), 1.0);
+}
+
+TEST(WeightTest, CanSetWeight) {
+    SquareGrid grid(5, 5);
+    grid.SetWeight(2, 2, 5.0);
+    EXPECT_DOUBLE_EQ(grid.GetNode(2, 2)->GetWeight(), 5.0);
+}
+
+TEST(WeightTest, HexCanSetWeight) {
+    HexGrid grid(5, 5);
+    grid.SetWeight(2, 2, 3.0);
+    EXPECT_DOUBLE_EQ(grid.GetNode(2, 2)->GetWeight(), 3.0);
+}
+
+TEST(WeightTest, PathAvoidsHighWeightCells) {
+    // 3x1 grid: (0,0) -> (1,0) -> (2,0)
+    // Make middle cell very expensive
+    // Compare with unweighted: path should still go through it
+    // since it's the only route in a 3x1 grid
+    // Use a wider grid to give an alternative route
+    //
+    // 5x3 grid, start (0,1) to (4,1)
+    // Weight the direct path (1,1)(2,1)(3,1) at 9 each
+    // A* should route around via row 0 or row 2 instead
+    SquareGrid weighted(5, 3);
+    weighted.SetWeight(1, 1, 9);
+    weighted.SetWeight(2, 1, 9);
+    weighted.SetWeight(3, 1, 9);
+    auto wPath = Pathfinding::FindPath(weighted.GetNode(0, 1), weighted.GetNode(4, 1));
+
+    SquareGrid unweighted(5, 3);
+    auto uPath = Pathfinding::FindPath(unweighted.GetNode(0, 1), unweighted.GetNode(4, 1));
+
+    ASSERT_FALSE(wPath.empty());
+    ASSERT_FALSE(uPath.empty());
+
+    // Weighted path should take more steps (longer route to avoid cost)
+    EXPECT_GT(wPath.size(), uPath.size());
+}
+
+TEST(WeightTest, PathStillFindsRouteWithWeights) {
+    SquareGrid grid(5, 5);
+    grid.SetWeight(1, 0, 5);
+    grid.SetWeight(2, 0, 5);
+    grid.SetWeight(3, 0, 5);
+
+    auto path = Pathfinding::FindPath(grid.GetNode(0, 0), grid.GetNode(4, 0));
+    EXPECT_FALSE(path.empty());
+}
+
+TEST(WeightTest, UniformWeightSameAsUnweighted) {
+    // All weight-1 grid should produce same path as default
+    SquareGrid grid(5, 5);
+    for (int y = 0; y < 5; y++)
+        for (int x = 0; x < 5; x++)
+            grid.SetWeight(x, y, 1.0);
+
+    auto path = Pathfinding::FindPath(grid.GetNode(0, 0), grid.GetNode(4, 4));
+    ASSERT_FALSE(path.empty());
+    EXPECT_EQ(path.size(), 8);
+}
+
+TEST(WeightTest, HexPathAvoidsHighWeightCells) {
+    HexGrid weighted(5, 3);
+    weighted.SetWeight(1, 1, 9);
+    weighted.SetWeight(2, 1, 9);
+    weighted.SetWeight(3, 1, 9);
+    auto wPath = Pathfinding::FindPath(weighted.GetNode(0, 1), weighted.GetNode(4, 1));
+
+    HexGrid unweighted(5, 3);
+    auto uPath = Pathfinding::FindPath(unweighted.GetNode(0, 1), unweighted.GetNode(4, 1));
+
+    ASSERT_FALSE(wPath.empty());
+    ASSERT_FALSE(uPath.empty());
+
+    // Weighted path takes a longer route to avoid expensive cells
+    EXPECT_GT(wPath.size(), uPath.size());
+}
+
+TEST(WeightTest, WeightDoesNotAffectWalls) {
+    SquareGrid grid(5, 5);
+    grid.SetWall(1, 0);
+    grid.SetWall(0, 1);
+    // Weight a wall — shouldn't matter, path is still blocked
+    grid.SetWeight(1, 0, 1.0);
+
+    auto path = Pathfinding::FindPath(grid.GetNode(0, 0), grid.GetNode(4, 4));
+    EXPECT_TRUE(path.empty());
 }
